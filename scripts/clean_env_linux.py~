@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+"""Clean up all native‑Linux swarm‑simulation processes and environment variables.
+
+This script terminates any running PX4 SITL processes, Gazebo processes,
+QGroundControl sessions, and uXRCE‑DDS bridges that might remain from
+previous runs.  It also unsets any PX4_* and GAZEBO_* environment variables
+within this Python process.  Use it before starting a new simulation to
+ensure a clean slate.
+
+Usage:
+    python3 clean_env_linux.py
+
+No arguments are accepted.
+"""
+
+import logging
+import os
+import subprocess
+import sys
+
+
+def _run_pkill(pattern: str) -> None:
+    """Run ``pkill -f pattern`` to terminate matching processes.
+
+    Args:
+        pattern: Substring to match against process command lines.
+    """
+    try:
+        subprocess.run(["pkill", "-f", pattern], check=False)
+    except FileNotFoundError:
+        logging.warning("pkill is not available on this system; unable to kill %s", pattern)
+
+
+def kill_processes() -> None:
+    """Terminate common swarm simulation processes."""
+    patterns = [
+        "px4_sitl",
+        "px4",
+        "gz sim",
+        "gzserver",
+        "gzclient",
+        "ign",
+        "qgroundcontrol",
+        "QGroundControl",
+        "micrortps_agent",
+        "micrortps_client",
+        "px4_ros_com",
+    ]
+    for pat in patterns:
+        _run_pkill(pat)
+
+
+def unset_environment() -> None:
+    """Unset any PX4_* or GAZEBO_* variables in the current environment."""
+    keys_to_unset = [k for k in os.environ if k.startswith("PX4_") or k.startswith("GAZEBO_")]
+    for key in keys_to_unset:
+        os.environ.pop(key, None)
+
+
+def main() -> None:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+    logging.info("Cleaning native Linux simulation environment…")
+    kill_processes()
+    unset_environment()
+    logging.info("Environment cleaned.")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as exc:
+        logging.exception("Cleanup encountered an error: %s", exc)
+        sys.exit(1)
