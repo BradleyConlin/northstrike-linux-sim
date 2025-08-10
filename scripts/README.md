@@ -30,3 +30,10 @@
 
 ### Notes
 - If a GUI window appears while `--headless` was requested, run `clean_env_linux.py` first; a previous GUI instance was still running.
+
+## Make targets
+- `make run` — Headless + detached (good for training/CI)
+- `make debug` — GUI + (optional) QGC, blocks until Ctrl+C
+- `make headless` — Headless, blocks (no QGC)
+- `make stop` — Clean up Gazebo/PX4/QGC
+- `make ps` — Show running gz/px4 processes
