@@ -27,20 +27,11 @@ run: stop
 
 debug: stop
 	@echo ">>> GUI debug launch (DRONES=$(DRONES), MODEL=$(MODEL), OFFSET=$(OFFSET))"
-	@# If you want QGC auto-launch, ensure QGC_APPIMAGE is exported in your shell or set above.
-	@# Example: make debug QGC_APPIMAGE=/home/brad/dev/QGroundControl.AppImage
-	@env QGC_APPIMAGE="$(QGC_APPIMAGE)" \
-	$(PYTHON) $(RUN_ALL) --drones $(DRONES) --model $(MODEL) --offset $(OFFSET) --headless false --qgc true
-
-headless: stop
-	@echo ">>> Headless (blocking) launch (DRONES=$(DRONES), MODEL=$(MODEL), OFFSET=$(OFFSET))"
-	$(PYTHON) $(RUN_ALL) --drones $(DRONES) --model $(MODEL) --offset $(OFFSET) --headless true --qgc false
-
-stop:
-	@echo ">>> Cleaning up Gazebo/PX4/QGC…"
-	-$(PYTHON) $(CLEAN)
-	@echo ">>> Clean done."
-
-ps:
-	@echo ">>> Running gz/px4 processes:"
-	@pgrep -fa "gz|px4" || echo "(none)"
+	$(PY) scripts/clean_env_linux.py
+	$(PY) scripts/launch_gazebo_world_linux.py
+	@if [ "$(QGC)" = "true" ]; then \
+		if [ -z "$(QGC_APPIMAGE)" ]; then echo "[WARN] QGC not launched: export QGC_APPIMAGE to AppImage path"; else \
+			$(PY) scripts/launch_qgroundcontrol_linux.py; \
+		fi; \
+	fi
+	$(PY) scripts/launch_px4_linux.py -n $(DRONES) -o $(OFFSET) -m $(MODEL)
