@@ -1,104 +1,104 @@
 #!/usr/bin/env python3
-import os, shlex, subprocess, time, sys, signal, pathlib
+"""
+run_all_linux.py — Orchestrator for Northstrike Linux SIM
 
-HOME = pathlib.Path.home()
-GZ_PATHS = [
-    str(HOME / ".gz" / "models"),
-    str(HOME / ".gz" / "models" / "PX4-gazebo-models" / "models"),
-]
-X500_SDF = str(HOME / ".gz" / "models" / "x500" / "model.sdf")
-PX4_ROOT = str(HOME / "dev" / "px4-autopilot-harmonic")
-PX4_BIN  = f"{PX4_ROOT}/build/px4_sitl_default/bin/px4"
+Order:
+  1) clean_env_linux.py
+  2) launch_gazebo_world_linux.py [--headless]   (NON-BLOCKING)
+  3) launch_px4_linux.py -n N [--detach optional, with readiness check inside]
+  4) (optional) launch_qgroundcontrol_linux.py when --qgc true
 
-def add_env_paths(env):
-    existing = env.get("GZ_SIM_RESOURCE_PATH", "")
-    env["GZ_SIM_RESOURCE_PATH"] = ":".join(GZ_PATHS + ([existing] if existing else []))
-    return env
+Defaults:
+  --headless true
+  --qgc     false
+"""
 
-def run(cmd, env=None, quiet=False):
-    print(f"$ {cmd}")
-    stdout = subprocess.DEVNULL if quiet else None
-    stderr = subprocess.DEVNULL if quiet else None
-    return subprocess.Popen(shlex.split(cmd), env=env, stdout=stdout, stderr=stderr)
+import argparse
+import logging
+import os
+import subprocess
+import sys
+import time
+from pathlib import Path
 
-def gz_add_resource_runtime(path):
-    cmd = (
-        'gz service -s /gazebo/resource_paths/add '
-        '--reqtype gz.msgs.StringMsg_V --reptype gz.msgs.Boolean -r '
-        f'\'data: "{path}"\''
-    )
-    subprocess.run(cmd, shell=True, check=False)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+log = logging.getLogger("run_all_linux")
 
-def gz_spawn_x500(world="default", pose=(0, 0, 1, 0, 0, 0)):
-    x, y, z, rr, pp, yy = pose
-    req = (
-        f'sdf_filename: "{X500_SDF}"\n'
-        f'name: "x500"\n'
-        f'pose {{ position {{ x: {x} y: {y} z: {z} }} }}'
-    )
+def as_bool(v) -> bool:
+    return str(v).strip().lower() in ("1", "true", "yes", "y", "on")
 
-    cmd = (
-        f'gz service -s /world/{world}/create '
-        f'--reptype gz.msgs.Boolean '
-        f'--reqtype gz.msgs.EntityFactory '
-        f'--timeout 5000 -r '
-        f"'{req}'"
-    )
+def run_checked(cmd, cwd=None, env=None):
+    log.info("EXEC: %s", " ".join(cmd))
+    subprocess.check_call(cmd, cwd=cwd, env=env)
 
-    return subprocess.run(cmd, shell=True).returncode == 0
+def start_proc(cmd, cwd=None, env=None) -> subprocess.Popen:
+    log.info("EXEC: %s", " ".join(cmd))
+    return subprocess.Popen(cmd, cwd=cwd, env=env)
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT  = SCRIPT_DIR.parent
+
+CLEAN = SCRIPT_DIR / "clean_env_linux.py"
+GAZEBO = SCRIPT_DIR / "launch_gazebo_world_linux.py"
+PX4 = SCRIPT_DIR / "launch_px4_linux.py"
+QGC = SCRIPT_DIR / "launch_qgroundcontrol_linux.py"
+
+for p in (CLEAN, GAZEBO, PX4):
+    if not p.exists():
+        log.error("Missing required script: %s", p)
+        sys.exit(1)
+
+parser = argparse.ArgumentParser(description="Northstrike Linux SIM Orchestrator")
+parser.add_argument("--drones", type=int, default=1, help="Number of PX4 SITL instances")
+parser.add_argument("--headless", type=str, default="true", help="true/false (Gazebo headless)")
+parser.add_argument("--qgc", type=str, default="false", help="true/false (launch QGC)")
+parser.add_argument("--sleep-between", type=float, default=2.0, help="Seconds to sleep between stages")
+parser.add_argument("--detach", type=str, default="false", help="true/false - run PX4 in background")
+args = parser.parse_args()
+
+HEADLESS = as_bool(args.headless)
+LAUNCH_QGC = as_bool(args.qgc)
+DETACH = as_bool(args.detach)
 
 def main():
-    # sanity
-    if not os.path.isfile(PX4_BIN):
-        print("PX4 binary not found. Build first:\n  DONT_RUN=1 make px4_sitl_default", file=sys.stderr)
-        sys.exit(1)
-    if not os.path.isfile(X500_SDF):
-        print(f"x500 SDF not found at {X500_SDF}. Make sure PX4-gazebo-models is cloned.", file=sys.stderr)
-        sys.exit(1)
+    log.info("=== Northstrike Orchestrator ===")
+    log.info("Repo: %s", REPO_ROOT)
+    log.info("Drones: %d | Headless: %s | QGC: %s | Detach: %s", args.drones, HEADLESS, LAUNCH_QGC, DETACH)
 
-    env = add_env_paths(os.environ.copy())
-
-    # 1) Start Gazebo
-    gz = run("gz sim -v 4 " + os.path.join(PX4_ROOT, "Tools/simulation/gz/worlds/default.sdf"), env=env, quiet=True)
-    time.sleep(3.0)
-
-    # 2) Ensure paths visible at runtime & spawn x500
-    for p in GZ_PATHS:
-        gz_add_resource_runtime(p)
-    ok = gz_spawn_x500(world="default", pose=(0,0,1,0,0,0))
-    if not ok:
-        print("Spawn failed (continuing; PX4 may still try to spawn).")
-
-    # 3) Launch PX4
-    px4_env = env.copy()
-    px4_env.update({
-        "PX4_SYS_AUTOSTART": "4001",
-        "PX4_SIM_MODEL": "gz_x500",
-        "PX4_GZ_WORLD": "default",
-        "PX4_GZ_MODEL_NAME": "x500",
-        "PX4_GZ_MODEL_POSE": "0,0,1,0,0,0",
-    })
-
-    px4 = subprocess.Popen(
-        [PX4_BIN, "-i", "0", "-d", "-s", "etc/init.d-posix/rcS"],
-        env=px4_env,
-        cwd=PX4_ROOT,   # <-- critical so etc/init.d-posix/rcS is found
-    )
-
-    print("Running. Ctrl+C to stop.")
     try:
-        while True:
-            time.sleep(1)
+        # 1) Clean
+        run_checked([sys.executable, str(CLEAN)])
+        time.sleep(args.sleep_between)
+
+        # 2) Gazebo (NON-BLOCKING)
+        gz_cmd = [sys.executable, str(GAZEBO)]
+        if HEADLESS:
+            gz_cmd += ["--headless"]  # flag-only
+        gz_proc = start_proc(gz_cmd)
+        # Give Gazebo a moment to bring up the world before injecting models
+        time.sleep(max(2.0, args.sleep_between))
+
+        # 3) PX4 SITL (readiness check is inside launch_px4_linux.py)
+        px4_cmd = [sys.executable, str(PX4), "-n", str(args.drones)]
+        if DETACH:
+            px4_cmd += ["--detach"]
+        run_checked(px4_cmd)  # blocks until PX4 is ready (or exits early if --detach after ready)
+
+        # 4) QGC (optional, fire-and-forget)
+        if LAUNCH_QGC and QGC.exists():
+            log.info("Launching QGroundControl (optional)…")
+            subprocess.Popen([sys.executable, str(QGC)], env={**os.environ})
+            log.info("QGC started (if AppImage is available).")
+
+        log.info("All launch steps completed.")
+        log.info("Tip: Headless training ⇒ keep --qgc false. Debugging ⇒ pass --qgc true and export $QGC_APPIMAGE.")
+
+    except subprocess.CalledProcessError as e:
+        log.error("A step failed (exit %s). See logs above.", e.returncode)
+        sys.exit(e.returncode)
     except KeyboardInterrupt:
-        pass
-    finally:
-        for p in (px4, gz):
-            if p and p.poll() is None:
-                p.terminate()
-        for p in (px4, gz):
-            try: p.wait(timeout=5)
-            except Exception: pass
+        log.warning("Interrupted by user.")
+        sys.exit(130)
 
 if __name__ == "__main__":
     main()
-
