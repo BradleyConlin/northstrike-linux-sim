@@ -27,3 +27,6 @@
   2) Ensure PX4 built: `DONT_RUN=1 make px4_sitl_default`
   3) `launch_px4_linux.py` must **not** set `PX4_GZ_MODEL_NAME` (attach-only).
 - Stop everything fast: `python3 scripts/clean_env_linux.py`
+
+### Notes
+- If a GUI window appears while `--headless` was requested, run `clean_env_linux.py` first; a previous GUI instance was still running.

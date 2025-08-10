@@ -5,7 +5,7 @@ run_all_linux.py — Orchestrator for Northstrike Linux SIM
 Order:
   1) clean_env_linux.py
   2) launch_gazebo_world_linux.py [--headless]   (NON-BLOCKING)
-  3) launch_px4_linux.py -n N [--detach optional, with readiness check inside]
+  3) launch_px4_linux.py -n N [-m MODEL -o OFFSET] [--detach]
   4) (optional) launch_qgroundcontrol_linux.py when --qgc true
 
 Defaults:
@@ -35,6 +35,16 @@ def start_proc(cmd, cwd=None, env=None) -> subprocess.Popen:
     log.info("EXEC: %s", " ".join(cmd))
     return subprocess.Popen(cmd, cwd=cwd, env=env)
 
+def rotate_logs(dir_path: Path, keep: int = 10):
+    try:
+        files = sorted(dir_path.glob("drone_*.txt"),
+                       key=lambda p: p.stat().st_mtime,
+                       reverse=True)
+        for f in files[keep:]:
+            f.unlink(missing_ok=True)
+    except Exception as e:
+        log.warning("Log rotation skipped: %s", e)
+
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT  = SCRIPT_DIR.parent
 
@@ -54,6 +64,9 @@ parser.add_argument("--headless", type=str, default="true", help="true/false (Ga
 parser.add_argument("--qgc", type=str, default="false", help="true/false (launch QGC)")
 parser.add_argument("--sleep-between", type=float, default=2.0, help="Seconds to sleep between stages")
 parser.add_argument("--detach", type=str, default="false", help="true/false - run PX4 in background")
+# passthrough to PX4 launcher:
+parser.add_argument("--model", type=str, default="x500", help="PX4/GZ model (default: x500)")
+parser.add_argument("--offset", type=float, default=2.0, help="Spacing (m) between drones (default: 2.0)")
 args = parser.parse_args()
 
 HEADLESS = as_bool(args.headless)
@@ -63,12 +76,23 @@ DETACH = as_bool(args.detach)
 def main():
     log.info("=== Northstrike Orchestrator ===")
     log.info("Repo: %s", REPO_ROOT)
-    log.info("Drones: %d | Headless: %s | QGC: %s | Detach: %s", args.drones, HEADLESS, LAUNCH_QGC, DETACH)
+    log.info("Drones: %d | Headless: %s | QGC: %s | Detach: %s | Model: %s | Offset: %.2f",
+             args.drones, HEADLESS, LAUNCH_QGC, DETACH, args.model, args.offset)
 
     try:
         # 1) Clean
         run_checked([sys.executable, str(CLEAN)])
         time.sleep(args.sleep_between)
+
+        # Headless guard: if headless requested, make sure no GUI gz is alive
+        if HEADLESS:
+            try:
+                subprocess.call(["pkill","-f","gz sim .* -g"],
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.call(["pkill","-f","gzclient"],
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except Exception:
+                pass
 
         # 2) Gazebo (NON-BLOCKING)
         gz_cmd = [sys.executable, str(GAZEBO)]
@@ -78,11 +102,16 @@ def main():
         # Give Gazebo a moment to bring up the world before injecting models
         time.sleep(max(2.0, args.sleep_between))
 
-        # 3) PX4 SITL (readiness check is inside launch_px4_linux.py)
-        px4_cmd = [sys.executable, str(PX4), "-n", str(args.drones)]
+        # 3) PX4 SITL (readiness check happens inside launch_px4_linux.py)
+        px4_cmd = [sys.executable, str(PX4),
+                   "-n", str(args.drones),
+                   "-o", str(args.offset),
+                   "-m", args.model]
         if DETACH:
             px4_cmd += ["--detach"]
-        run_checked(px4_cmd)  # blocks until PX4 is ready (or exits early if --detach after ready)
+
+        run_checked(px4_cmd)
+        rotate_logs(SCRIPT_DIR / "logs", keep=10)
 
         # 4) QGC (optional, fire-and-forget)
         if LAUNCH_QGC and QGC.exists():
