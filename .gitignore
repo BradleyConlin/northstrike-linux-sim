@@ -1,25 +1,4 @@
-# Python
+*.bak*
+*.tmp
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-.venv/
-
-# Logs
-logs/
 *.log
-
-# PX4 build and temp files
-build/
-src/build/
-log/
-*.ulg
-
-# Gazebo
-~/.gazebo/
-*.world
-
-# OS files
-.DS_Store
-Thumbs.db
-*~

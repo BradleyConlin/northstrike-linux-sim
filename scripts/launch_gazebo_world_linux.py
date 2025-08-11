@@ -2,6 +2,12 @@
 import argparse, logging, os, subprocess, sys, time
 from pathlib import Path
 
+# --- Software-GL fallback ---
+if os.environ.get("GZ_SOFT") == "1":
+    os.environ["LIBGL_ALWAYS_SOFTWARE"] = "1"
+    os.environ.setdefault("QT_QPA_PLATFORM", "xcb")
+    print("[INFO] Gazebo: software-GL fallback enabled (GZ_SOFT=1)")
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("launch_gazebo_world")
 
@@ -52,7 +58,7 @@ def main():
     log.info("Gazebo started (PID %s).  Press Ctrl+C to stop.", proc.pid)
 
     try:
-        proc.wait()
+        proc
     except KeyboardInterrupt:
         log.info("Interrupted; terminating Gazebo…")
         proc.terminate()
