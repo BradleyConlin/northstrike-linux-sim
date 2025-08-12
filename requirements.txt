@@ -1,0 +1,2 @@
+# Optional Python deps for helper scripts
+mavsdk>=2.0.0
