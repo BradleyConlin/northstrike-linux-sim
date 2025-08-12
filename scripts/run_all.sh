@@ -2,6 +2,7 @@
 
 
 set -euo pipefail
+echo "[run_all] env: QGC=${QGC:-unset} HEADLESS=${HEADLESS:-unset}"
 QGC=${QGC:-true}
 HEADLESS=${HEADLESS:-false}
 

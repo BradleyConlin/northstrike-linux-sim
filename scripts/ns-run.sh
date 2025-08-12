@@ -8,6 +8,7 @@ if [ "${HEADLESS:-false}" = "true" ]; then
   export QGC=false   # never start QGC in headless
 else
   export PX4_GZ_HEADLESS=0
+  export QGC=${QGC:-true}
 fi
 
 # ---- clean slate (belt & suspenders) ----
@@ -19,7 +20,7 @@ pkill -f "/px4_sitl_default/bin/px4" || true
 sleep 0.5
 
 # ---- launch px4+gz via run_all.sh (pass env explicitly) ----
-QGC="${QGC:-false}" \
+QGC="${QGC}" \
 HEADLESS="${HEADLESS:-false}" \
 DRONES="${DRONES:-1}" \
 MODEL="${MODEL:-x500}" \
