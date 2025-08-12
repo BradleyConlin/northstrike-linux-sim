@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
+
+
 set -euo pipefail
+QGC=${QGC:-true}
+HEADLESS=${HEADLESS:-false}
 
 # ---- args ----
 WORLD="default"
@@ -41,7 +45,9 @@ start_qgc() {
   echo "[run_all] WARNING: QGroundControl not found; continuing without it."
 }
 
-start_qgc
+if [ "${QGC}" = "true" ] && [ "${HEADLESS}" != "true" ]; then
+  start_qgc
+fi
 
 # ---- PX4 + Gazebo ----
 if [[ ! -f "${WORLD_FILE}" ]]; then
@@ -51,4 +57,23 @@ fi
 
 cd "${PX4_DIR}"
 echo "[run_all] launching PX4 SITL + Gazebo..."
+
+# --- Gazebo GUI watcher (opens once when the world appears) ---
+if [ "${HEADLESS:-false}" != "true" ]; then
+  (
+    unset QT_QPA_PLATFORM
+    MAX=${GZ_GUI_WAIT_MAX:-30}
+    for i in $(seq 1 "$MAX"); do
+      if gz topic -l 2>/dev/null | grep -qE "^/world/.*/state$"; then
+        pgrep -f "gz sim -g" >/dev/null || nohup gz sim -g >/dev/null 2>&1 &
+        break
+      fi
+      sleep 1
+    done
+  ) &
+fi
+
 PX4_GZ_WORLD="${WORLD}" make px4_sitl gz_x500
+
+# === Auto-open Gazebo GUI when not headless ===
+if [ "${HEADLESS:-false}" != "true" ]; then
