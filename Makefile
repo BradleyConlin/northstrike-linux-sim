@@ -17,3 +17,17 @@ smoke:
 # Stop everything
 stop:
 	./scripts/stop_all.sh
+
+# === northstrike helpers ===
+SHELL := /bin/bash
+
+.PHONY: health demo_hover
+
+health:
+	@./scripts/sim_healthcheck.sh
+
+demo_hover: health
+	@echo "Running OFFBOARD hover demo..."
+	@. /opt/ros/humble/setup.bash; \
+	if [ -f .ros_env ]; then set -a; source .ros_env; set +a; fi; \
+	python3 scripts/ros2_offboard_hover.py
