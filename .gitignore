@@ -1,7 +1,15 @@
-*.bak*
-*.tmp
+# Python
 __pycache__/
-*.log
+*.pyc
+
+# Venv
 .venv/
-runs/
-logs/
+
+# Logs / training outputs / PX4 logs
+rl/out/
+log/
+*.ulg
+
+# Editors
+.vscode/
+.idea/
