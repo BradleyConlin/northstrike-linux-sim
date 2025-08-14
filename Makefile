@@ -1,33 +1,36 @@
-.PHONY: run headless smoke stop
+.PHONY: help setup sim sim-headless stop hover train eval tb clean
 
-# Run with GUI (quiet: no XRCE unless you pass --uxrce)
-run:
-	./scripts/run_all.sh --world=default
+help:
+@echo "Targets: setup, sim, sim-headless, stop, hover, train, eval, tb, clean"
 
-# Headless (no GUI, no QGC) - good for CI/training
-headless:
-	./scripts/run_all.sh --headless --no-qgc
+setup:
+python3 -m venv .venv
+. .venv/bin/activate && pip install -U pip && pip install -r requirements.txt
 
-# Quick smoke: launch sim (no QGC), wait, run MAVSDK smoke test
-smoke:
-	( ./scripts/run_all.sh --world=default --no-qgc & echo $$! > .run_pid ); \
-	sleep 8; \
-	python3 ./scripts/smoke_mavsdk_takeoff.py || true
+sim:
+HEADLESS=false QGC=true ./scripts/ns-run.sh
 
-# Stop everything
+sim-headless:
+HEADLESS=true QGC=false ./scripts/ns-run.sh
+
 stop:
-	./scripts/stop_all.sh
+./scripts/ns-stop.sh
 
-# === northstrike helpers ===
-SHELL := /bin/bash
+hover:
+./tools/hover_run.sh
 
-.PHONY: health demo_hover
+train:
+GUI?=true
+GUI=$(GUI) ./rl/ppo_run.sh STEPS?=20000
+GUI=$(GUI) ./rl/ppo_run.sh STEPS=$(STEPS)
 
-health:
-	@./scripts/sim_healthcheck.sh
+eval:
+GUI?=true
+EPISODES?=3
+GUI=$(GUI) EPISODES=$(EPISODES) ./rl/ppo_eval.sh
 
-demo_hover: health
-	@echo "Running OFFBOARD hover demo..."
-	@. /opt/ros/humble/setup.bash; \
-	if [ -f .ros_env ]; then set -a; source .ros_env; set +a; fi; \
-	python3 scripts/ros2_offboard_hover.py
+tb:
+. .venv/bin/activate && python -m tensorboard.main --logdir rl/out/tb
+
+clean:
+rm -rf rl/out log *.ulg

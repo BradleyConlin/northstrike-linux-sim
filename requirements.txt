@@ -1,2 +1,12 @@
-# Optional Python deps for helper scripts
-mavsdk>=2.0.0
+
+Core
+
+gymnasium
+stable-baselines3
+mavsdk
+numpy
+
+SB3 deps
+
+torch
+tensorboard
