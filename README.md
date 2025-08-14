@@ -1,6 +1,6 @@
 # Northstrike Linux Sim — PX4 + Gazebo + RL (PPO)
 
-### Quickstart
+## Quickstart
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
@@ -23,7 +23,8 @@ bash
 Copy
 Edit
 GUI=true ./rl/ppo_run.sh STEPS=20000
-# TensorBoard: tensorboard --logdir rl/out/tb
+# TensorBoard:
+tensorboard --logdir rl/out/tb
 PPO eval
 bash
 Copy

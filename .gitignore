@@ -5,7 +5,7 @@ __pycache__/
 # Venv
 .venv/
 
-# Logs / training outputs / PX4 logs
+# Logs & artifacts
 rl/out/
 log/
 *.ulg

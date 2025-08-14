@@ -1,12 +1,9 @@
+# Core
+gymnasium>=0.29
+stable-baselines3>=2.3.0
+mavsdk>=2.1.0
+numpy>=1.24
 
-Core
-
-gymnasium
-stable-baselines3
-mavsdk
-numpy
-
-SB3 deps
-
-torch
-tensorboard
+# SB3 deps
+torch>=2.1
+tensorboard>=2.15
