@@ -13,3 +13,9 @@ log/
 # Editors
 .vscode/
 .idea/
+# Backups & scratch
+*.bak
+*.bak.*
+scripts/*.bak.*
+*.log
+scripts/gz_gui.log
