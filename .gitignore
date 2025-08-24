@@ -1,21 +1,14 @@
-# Python
+# heavy data and rosbag outputs
+datasets/
+runs/
+*.db3
+*.db3.zstd
+
+# previews/videos
+*_overlay.jpg
+preview.jpg
+*.mp4
+
+# python noise
 __pycache__/
 *.pyc
-
-# Venv
-.venv/
-
-# Logs & artifacts
-rl/out/
-log/
-*.ulg
-
-# Editors
-.vscode/
-.idea/
-# Backups & scratch
-*.bak
-*.bak.*
-scripts/*.bak.*
-*.log
-scripts/gz_gui.log
