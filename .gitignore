@@ -1,14 +1,24 @@
-# heavy data and rosbag outputs
-datasets/
-runs/
-*.db3
-*.db3.zstd
-
-# previews/videos
-*_overlay.jpg
-preview.jpg
-*.mp4
-
-# python noise
+# Python venvs & caches
+.venv/
 __pycache__/
 *.pyc
+
+# Local runs, logs, scratch
+logs/
+*.log
+instances/
+rl/out/
+scripts/*.bak.*
+scripts/gz_gui.log
+
+# Big binaries we do NOT commit
+runs/
+datasets/
+vision_datasets/
+incoming/
+raw/
+
+# OS/editor junk
+.DS_Store
+Thumbs.db
+*.swp
