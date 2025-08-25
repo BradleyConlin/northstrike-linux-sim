@@ -1,0 +1,31 @@
+Panels:
+- Class: rviz_common/Displays
+- Class: rviz_common/Views
+Visualization Manager:
+  Global Options:
+    Fixed Frame: map
+  Displays:
+  - Class: rviz_default_plugins/Grid
+    Name: Grid
+    Enabled: true
+  - Class: rviz_default_plugins/Image
+    Name: RGB
+    Enabled: true
+    Topic:
+      Value: /ns_rgb/image
+    Queue Size: 10
+  - Class: rviz_default_plugins/Image
+    Name: DepthColor
+    Enabled: true
+    Topic:
+      Value: /ns_depth/pred_color
+    Queue Size: 10
+  Tools:
+  - Class: rviz_default_plugins/Interact
+  - Class: rviz_default_plugins/MoveCamera
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 10
+      Pitch: 0.785398
+      Yaw: 0.785398
