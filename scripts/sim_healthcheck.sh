@@ -19,7 +19,7 @@ echo "ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}  RMW_IMPLEMENTATION=${RMW_IMPLEMENTATION
 echo "[1/4] Checking MAVROS node..."
 if ! ros2 node list | grep -E -q '^/(mavros|mavros_node)$'; then
   echo "MAVROS node not found. Is it running?"
-  echo "Try:  ros2 run mavros mavros_node --ros-args -p fcu_url:=udp://:14540@" >&2
+  echo "Try:  ros2 run mavros mavros_node --ros-args -p fcu_url:=udpin://:14540@" >&2
   exit 1
 fi
 echo " OK"

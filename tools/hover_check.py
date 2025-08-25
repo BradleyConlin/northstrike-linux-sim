@@ -4,7 +4,7 @@ from mavsdk import System
 
 # PX4 SITL sends "Onboard" to 14540 by default; this is correct for MAVSDK.
 # You'll see a deprecation warning in PX4 console about 'udp://'; it's harmless.
-UDP_URL = "udp://:14540"
+UDP_URL = "udpin://:14540"
 
 async def wait_connected(drone, timeout_s=20):
     async def _wait():

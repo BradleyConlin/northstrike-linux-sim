@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <world name="landing_test">
+
+    <!-- Core systems -->
+    <plugin filename="gz-sim-physics-system"           name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-sensors-system"           name="gz::sim::systems::Sensors"/>
+    <plugin filename="gz-sim-navsat-system"            name="gz::sim::systems::NavSat"/>
+    <plugin filename="gz-sim-imu-system"               name="gz::sim::systems::Imu"/>
+    <plugin filename="gz-sim-magnetometer-system"      name="gz::sim::systems::Magnetometer"/>
+
+    <!-- WGS84 origin for GPS -->
+    <spherical_coordinates>
+      <surface_model>EARTH_WGS84</surface_model>
+      <latitude_deg>37.4275</latitude_deg>
+      <longitude_deg>-122.1697</longitude_deg>
+      <elevation>30.0</elevation>
+      <heading_deg>0</heading_deg>
+    </spherical_coordinates>
+
+    <!-- Directional light with a UNIQUE name -->
+    <light type="directional" name="sun_main">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>1 1 1 1</diffuse>
+      <specular>0.5 0.5 0.5 1</specular>
+      <attenuation>
+        <range>1000</range><constant>0.9</constant><linear>0.01</linear><quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>-0.5 0.5 -1</direction>
+    </light>
+
+    <!-- Ground plane -->
+    <include><uri>model://ground_plane</uri></include>
+
+    <!-- Pads -->
+    <model name="landing_pad_1">
+      <static>true</static><pose>0 0 0 0 0 0</pose>
+      <link name="pad">
+        <visual name="v"><geometry><box><size>3 3 0.2</size></box></geometry></visual>
+        <collision name="c"><geometry><box><size>3 3 0.2</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <model name="landing_pad_2">
+      <static>true</static><pose>8 0 0 0 0 0</pose>
+      <link name="pad">
+        <visual name="v"><geometry><box><size>3 3 0.2</size></box></geometry></visual>
+        <collision name="c"><geometry><box><size>3 3 0.2</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Sensor mast with RGB, depth, lidar, IMU, mag, GPS -->
+    <include>
+      <uri>model://ns_sensor_mast</uri>
+      <pose>2 0 1.2 0 0 0</pose>
+    </include>
+
+  </world>
+</sdf>

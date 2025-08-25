@@ -1,0 +1,34 @@
+<sdf version="1.8">
+  <model name="ns_rgb_cam">
+    <static>true</static>
+    <!-- place the pole so it sees the pads; we offset with an include pose in the world -->
+    <pose>0 0 0 0 0 0</pose>
+
+    <link name="mast">
+      <!-- simple visible pole -->
+      <visual name="pole_vis">
+        <geometry><box><size>0.1 0.1 2.0</size></box></geometry>
+        <material><diffuse>0.3 0.3 0.35 1</diffuse></material>
+      </visual>
+      <collision name="pole_col">
+        <geometry><box><size>0.1 0.1 2.0</size></box></geometry>
+      </collision>
+
+      <!-- RGB camera sensor near top of the pole -->
+      <sensor name="rgb_cam" type="camera">
+        <pose>0 0 1.5 0 0 0</pose>
+        <update_rate>20</update_rate>
+        <camera>
+          <image>
+            <width>640</width>
+            <height>480</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip><near>0.05</near><far>80</far></clip>
+        </camera>
+        <always_on>true</always_on>
+        <visualize>true</visualize>
+      </sensor>
+    </link>
+  </model>
+</sdf>

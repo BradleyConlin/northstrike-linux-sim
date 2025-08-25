@@ -1,0 +1,27 @@
+run_id: 1755853021
+world: landing_pad.world.sdf
+lighting:
+  ambient:
+  - 0.59
+  - 0.42
+  - 0.25
+  - 1.0
+  background:
+  - 0.63
+  - 0.86
+  - 1.0
+  - 1.0
+wind:
+  speed_mps: 3.86
+  direction_deg: 245.0
+  turbulence: 0.06
+sensors:
+  camera_noise_sigma: 0.0117
+  imu_bias_g: 0.0106
+  gps_noise_m: 0.757
+textures:
+  ground: asphalt
+meta:
+  host: brad-X570
+  user: brad
+  git_rev: e4fa523
