@@ -11,14 +11,12 @@ Visualization Manager:
   - Class: rviz_default_plugins/Image
     Name: RGB
     Enabled: true
-    Topic:
-      Value: /ns_rgb/image
+    Topic: { Value: /ns_rgb/image }
     Queue Size: 10
   - Class: rviz_default_plugins/Image
     Name: DepthColor
     Enabled: true
-    Topic:
-      Value: /ns_depth/pred_color
+    Topic: { Value: /ns_depth/pred_color }
     Queue Size: 10
   Tools:
   - Class: rviz_default_plugins/Interact
