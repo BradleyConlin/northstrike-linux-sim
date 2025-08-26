@@ -82,3 +82,8 @@ depth_train_eval:
 
 depth_demo_new:
 	ONNX='$(ONNX)' bash scripts/ns_run_depth_demo.sh
+
+# Verify a depth dataset manifest (index, files, splits)
+.PHONY: depth_verify
+depth_verify:
+	. .venv/bin/activate && python scripts/data/verify_depth_manifest.py --dataset_root '$(DATASET)'
