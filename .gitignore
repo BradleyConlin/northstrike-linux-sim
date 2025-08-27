@@ -26,3 +26,7 @@ Thumbs.db
 # Re-include docs tree (override prior ignores)
 !docs/
 !docs/**
+
+# virtualenvs / big locals
+.venv/
+.venv_*/
