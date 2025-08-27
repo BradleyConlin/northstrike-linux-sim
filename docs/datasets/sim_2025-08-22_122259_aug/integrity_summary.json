@@ -1,0 +1,9 @@
+{
+  "root": "datasets/sim_2025-08-22_122259_aug",
+  "index_rows": 278929,
+  "splits": {
+    "train": 247936,
+    "val": 15496,
+    "test": 15497
+  }
+}

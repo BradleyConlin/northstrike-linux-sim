@@ -22,3 +22,7 @@ raw/
 .DS_Store
 Thumbs.db
 *.swp
+
+# Re-include docs tree (override prior ignores)
+!docs/
+!docs/**
