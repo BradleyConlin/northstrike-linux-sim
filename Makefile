@@ -103,3 +103,54 @@ depth_compare:
 	  grep -E 'e12: Eval split=' runs/depth_eval/metrics.txt | sed -E 's/.*split=([^ ]+).*MAE=([^ ]+).*RMSE=([^ ]+).*/| e12 | \1 | \2 | \3 |/'; \
 	  grep -E 'e24: Eval split=' runs/depth_eval/metrics.txt | sed -E 's/.*split=([^ ]+).*MAE=([^ ]+).*RMSE=([^ ]+).*/| e24 | \1 | \2 | \3 |/'; \
 	} > docs/depth_eval/compare_e12_e24.md
+
+.PHONY: onnx_smoke
+onnx_smoke:
+	. .venv/bin/activate && python scripts/tools/smoke_onnx.py --onnx '$(ONNX)' --size 320 240
+
+.PHONY: depth_set_default
+depth_set_default:
+	@ln -sf "$(ONNX)" "models/exported/_tinyunet_depth_default.onnx"
+	@ln -sf "$(ONNX)" "datasets/$(notdir $(DATASET))/_tinyunet_depth.onnx"
+	@echo "[ok] default -> $(ONNX)"
+
+.PHONY: lz_index lz_preview lz_train
+lz_index:
+	. .venv/bin/activate && python scripts/data/gen_lz_index.py --data '$(DATASET)'
+
+lz_preview:
+	. .venv/bin/activate && python scripts/data/viz_lz_masks.py --data '$(DATASET)' --limit $${LIMIT:-200}
+
+lz_train:
+	. .venv/bin/activate && python scripts/lz/train_lz_unet.py \
+	  --index '$(DATASET)/lz_index.csv' --root '$(DATASET)' \
+	  --size 320 240 --epochs $${EPOCHS:-2} --bs $${BS:-32} \
+	  --out runs/lz_unet
+
+.PHONY: lz_train_long lz_export
+lz_train_long:
+	. .venv/bin/activate && python scripts/lz/train_lz_unet.py \
+	  --index '$(DATASET)/lz_index.csv' --root '$(DATASET)' \
+	  --size 320 240 --epochs $${EPOCHS:-20} --bs $${BS:-64} \
+	  --out runs/lz_unet | tee runs/lz_unet/train_e$${EPOCHS:-20}.log
+
+lz_export:
+	. .venv/bin/activate && python scripts/lz/export_lz_onnx.py \
+	  --ckpt '$(CKPT)' --out '$(ONNX)'
+
+.PHONY: lz_eval
+lz_eval:
+	. .venv/bin/activate && python scripts/lz/eval_lz_onnx.py \
+	  --index '$(DATASET)/lz_index.csv' --root '$(DATASET)' \
+	  --onnx '$(ONNX)' --size 320 240 --limit $${LIMIT:-1000} \
+	  --provider $${PROVIDER:-CUDA} --out runs/lz_unet/eval.txt
+
+.PHONY: demo_view_install demo_full
+demo_view_install:
+	@sudo apt-get update && sudo apt-get install -y ros-humble-image-view
+
+# Run full pipeline (bag -> depth -> LZ -> gate). Env overrides OK:
+#   make demo_full BAG=... ONNX_DEPTH=... ONNX_LZ=... VIEW=0
+demo_full:
+	BAG='$(BAG)' ONNX_DEPTH='$(ONNX_DEPTH)' ONNX_LZ='$(ONNX_LZ)' VIEW=$${VIEW:-1} \
+	bash scripts/ns_run_full_demo.sh
