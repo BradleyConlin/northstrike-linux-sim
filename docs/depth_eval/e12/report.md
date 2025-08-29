@@ -1,5 +1,5 @@
 # Depth Run Report
-_generated: 2025-08-26 19:47:57_
+_generated: 2025-08-29 05:44:41_
 
 **Data:** `datasets/sim_2025-08-22_122259_aug`  
 **ONNX:** `models/exported/_tinyunet_depth_e12.onnx`  
@@ -7,8 +7,10 @@ _generated: 2025-08-26 19:47:57_
 
 ## Metrics
 ```
-MAE_m 0.005145
-RMSE_m 0.014710
+MAE_m 0.006267
+RMSE_m 0.017144
+e12: Eval split=val  pixels=1190092800  MAE=0.006 m  RMSE=0.017 m
+e12: Eval split=test  pixels=1190169600  MAE=0.006 m  RMSE=0.017 m
 ```
 
 ## Samples (RGB | Pred | GT)
