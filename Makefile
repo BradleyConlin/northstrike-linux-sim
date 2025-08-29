@@ -80,25 +80,26 @@ depth_stamp:
 	  --onnx 'models/exported/_tinyunet_depth_e$(EPOCHS).onnx' \
 	  --card 'runs/depth_eval/model_card.md'
 
-.PHONY: depth_report
-depth_report:
-	. .venv/bin/activate && python scripts/report_depth_run.py \
-	  --data '$(DATASET)' \
-	  --onnx '$(ONNX)' \
-	  --metrics runs/depth_eval/metrics.txt \
-	  --out runs/depth_eval/report.md
-.PHONY: depth_train_eval_all
-depth_train_eval_all:
-. .venv/bin/activate && python ns_train_depth_baseline.py --data '$(DATASET)' --epochs $(EPOCHS) --size 320 240 --out runs/depth_tinyunet
-. .venv/bin/activate && python ns_eval_depth.py --data '$(DATASET)' --ckpt '$(CKPT)' --max_depth_m $(MAX_DEPTH) --out runs/depth_eval
-. .venv/bin/activate && python ns_export_onnx.py --ckpt '$(CKPT)' --out '$(ONNX)'
-. .venv/bin/activate && python scripts/tools/stamp_artifacts.py --ckpt '$(CKPT)' --onnx '$(ONNX)' --card 'runs/depth_eval/model_card.md'
-. .venv/bin/activate && python scripts/report_depth_run.py --data '$(DATASET)' --onnx '$(ONNX)' --metrics runs/depth_eval/metrics.txt --out runs/depth_eval/report.md
-
-.PHONY: depth_train_eval_all
 depth_train_eval_all:
 	. .venv/bin/activate && python ns_train_depth_baseline.py --data '$(DATASET)' --epochs $(EPOCHS) --size 320 240 --out runs/depth_tinyunet
 	. .venv/bin/activate && python ns_eval_depth.py          --data '$(DATASET)' --ckpt '$(CKPT)' --max_depth_m $(MAX_DEPTH) --out runs/depth_eval
-	. .venv/bin/activate && python ns_export_onnx.py         --ckpt '$(CKPT)' --out '(ONNX)'
+	. .venv/bin/activate && python ns_export_onnx.py         --ckpt '$(CKPT)' --out '$(ONNX)'
 	. .venv/bin/activate && python scripts/tools/stamp_artifacts.py --ckpt '$(CKPT)' --onnx '$(ONNX)' --card 'runs/depth_eval/model_card.md'
 	. .venv/bin/activate && python scripts/report_depth_run.py --data '$(DATASET)' --onnx '$(ONNX)' --metrics runs/depth_eval/metrics.txt --out runs/depth_eval/report.md
+.PHONY: depth_publish_docs
+depth_publish_docs:
+	@mkdir -p docs/depth_eval/e$(EPOCHS)/samples
+	@cp runs/depth_eval/report.md docs/depth_eval/e$(EPOCHS)/
+	@cp runs/depth_eval/samples/sample_*.png docs/depth_eval/e$(EPOCHS)/samples/ || true
+
+.PHONY: depth_compare
+depth_compare:
+	@mkdir -p docs/depth_eval
+	@{ \
+	  echo "# TinyUNet depth: e12 vs e24"; \
+	  echo; \
+	  echo "| Model | Split | MAE (m) | RMSE (m) |"; \
+	  echo "|---|---:|---:|---:|"; \
+	  grep -E 'e12: Eval split=' runs/depth_eval/metrics.txt | sed -E 's/.*split=([^ ]+).*MAE=([^ ]+).*RMSE=([^ ]+).*/| e12 | \1 | \2 | \3 |/'; \
+	  grep -E 'e24: Eval split=' runs/depth_eval/metrics.txt | sed -E 's/.*split=([^ ]+).*MAE=([^ ]+).*RMSE=([^ ]+).*/| e24 | \1 | \2 | \3 |/'; \
+	} > docs/depth_eval/compare_e12_e24.md
